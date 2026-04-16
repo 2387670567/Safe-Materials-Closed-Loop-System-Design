@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Closed-Loop System Design Interface</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        
+        body { 
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        .scientific-card {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .scientific-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-value {
+            font-weight: 900;
+            letter-spacing: -0.025em;
+        }
+
+        .section-header {
+            font-weight: 800;
+            border-left: 6px solid #0f172a;
+            padding-left: 1rem;
+        }
+
+        /* Custom Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 5px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #0f172a;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -7px;
+            border: 3px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        const Icon = ({ name, className = "w-6 h-6" }) => {
+            const icons = {
+                Atom: <><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="7" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="17"></line><line x1="17" y1="12" x2="22" y2="12"></line><line x1="7" y1="12" x2="2" y2="12"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line></>,
+                Cycle: <><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></>,
+                Link: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></>,
+                Box: <><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></>,
+                Shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>,
+                Globe: <><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></>
+            };
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    {icons[name]}
+                </svg>
+            );
+        };
+
+        const App = () => {
+            // States for PV Technology
+            const [pvPurity, setPvPurity] = useState(85); // 0-100 scale for "Lead-Free" progress
+            const [yearsInOperation, setYearsInOperation] = useState(1.5); // Sn-based lifetime
+
+            // States for Blade Materials
+            const [materialType, setMaterialType] = useState('TPC'); // TPC vs Thermoset
+            
+            // Logic: Cost and Recovery Calculations
+            const efficiency = useMemo(() => 14 + (pvPurity / 100) * 2, [pvPurity]);
+            const recoveryRate = materialType === 'TPC' ? 92 : 5;
+            const costPremium = materialType === 'TPC' ? 18 : 0;
+
+            return (
+                <div className="max-w-7xl mx-auto p-6 md:p-10">
+                    
+                    {/* Header: Academic Style */}
+                    <header className="mb-12 border-b-4 border-slate-900 pb-8">
+                        <h1 className="text-4xl md:text-5xl font-[900] text-slate-900 leading-tight">
+                            Safe Materials & Closed-Loop System Design
+                        </h1>
+                        <p className="text-xl md:text-2xl font-bold text-slate-500 mt-4 max-w-5xl italic">
+                            Integrating Non-Toxic Photovoltaics, Recyclable Composites, and Extended Producer Responsibility (EPR)
+                        </p>
+                    </header>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                        
+                        {/* Section 1: Lead-Free PV Technologies (L-F PV) */}
+                        <div className="lg:col-span-4 flex flex-col gap-8">
+                            <section className="scientific-card p-8 flex flex-col h-full border-t-[10px] border-t-indigo-600">
+                                <div className="flex items-center mb-8">
+                                    <Icon name="Atom" className="w-10 h-10 text-indigo-600 mr-4" />
+                                    <h2 className="text-2xl font-extrabold text-slate-800">1. Pb-Free PV Transition</h2>
+                                </div>
+
+                                <div className="space-y-8 flex-grow">
+                                    <div>
+                                        <div className="flex justify-between items-end mb-3">
+                                            <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Efficiency (PCE)</span>
+                                            <span className="text-4xl data-value text-indigo-700">{efficiency.toFixed(1)}%</span>
+                                        </div>
+                                        <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden">
+                                            <div className="bg-indigo-600 h-full transition-all duration-700 shadow-sm" style={{ width: `${(efficiency/25)*100}%` }}></div>
+                                        </div>
+                                        <p className="text-xs font-bold text-slate-400 mt-2 uppercase italic text-right">Target: 23-25% (Pb-Equivalent)</p>
+                                    </div>
+
+                                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-lg font-bold text-slate-700">Operational Life</span>
+                                            <span className={`text-2xl data-value ${yearsInOperation > 20 ? 'text-emerald-600' : 'text-orange-600'}`}>{yearsInOperation} Yrs</span>
+                                        </div>
+                                        <input 
+                                            type="range" 
+                                            min="1" 
+                                            max="25" 
+                                            step="0.5" 
+                                            value={yearsInOperation} 
+                                            onChange={(e) => setYearsInOperation(parseFloat(e.target.value))}
+                                            className="mb-4"
+                                        />
+                                        <div className="flex justify-between text-xs font-black text-slate-400">
+                                            <span>Current (Sn)</span>
+                                            <span>Target (Grid Parity)</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-indigo-900 text-white p-6 rounded-xl shadow-lg">
+                                        <h3 className="text-sm font-black uppercase tracking-widest opacity-70 mb-2">Module Cost Proj.</h3>
+                                        <p className="text-3xl data-value">$0.40 / W</p>
+                                        <div className="h-1 bg-indigo-500 my-4 opacity-30"></div>
+                                        <p className="text-sm font-bold leading-relaxed">
+                                            Scale production of Pb-free absorbers required to match current Pb-based baseline ($0.20-0.30/W).
+                                        </p>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        {/* Section 2: Thermoplastic Blades & Recovery */}
+                        <div className="lg:col-span-4 flex flex-col gap-8">
+                            <section className="scientific-card p-8 h-full border-t-[10px] border-t-emerald-600">
+                                <div className="flex items-center mb-8">
+                                    <Icon name="Cycle" className="w-10 h-10 text-emerald-600 mr-4" />
+                                    <h2 className="text-2xl font-extrabold text-slate-800">2. Composite Circularity</h2>
+                                </div>
+
+                                <div className="flex bg-slate-100 p-1.5 rounded-xl mb-8">
+                                    <button 
+                                        onClick={() => setMaterialType('TPC')}
+                                        className={`flex-1 py-3 text-sm font-black rounded-lg transition-all ${materialType === 'TPC' ? 'bg-white shadow-md text-emerald-700' : 'text-slate-500'}`}
+                                    >THERMOPLASTIC (TPC)</button>
+                                    <button 
+                                        onClick={() => setMaterialType('Thermoset')}
+                                        className={`flex-1 py-3 text-sm font-black rounded-lg transition-all ${materialType === 'Thermoset' ? 'bg-white shadow-md text-slate-400' : 'text-slate-500'}`}
+                                    >THERMOSET (GFRP)</button>
+                                </div>
+
+                                <div className="space-y-10">
+                                    <div className="text-center">
+                                        <p className="text-sm font-black text-slate-400 uppercase tracking-tighter mb-2">Fiber Recovery Rate</p>
+                                        <div className="inline-flex items-center justify-center p-8 rounded-full border-8 border-slate-100 relative">
+                                            <span className={`text-6xl data-value ${materialType === 'TPC' ? 'text-emerald-600' : 'text-slate-300'}`}>{recoveryRate}%</span>
+                                            <div className="absolute inset-0 border-8 border-emerald-500 rounded-full clip-path-percentage" style={{ clipPath: `inset(${100-recoveryRate}% 0 0 0)` }}></div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <div className="p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl flex justify-between items-center">
+                                            <span className="font-bold text-slate-600 uppercase">Cost Premium</span>
+                                            <span className={`text-xl data-value ${costPremium > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>+{costPremium}%</span>
+                                        </div>
+                                        <div className="p-5 bg-emerald-50 border-2 border-emerald-100 rounded-2xl">
+                                            <p className="text-xs font-black text-emerald-800 uppercase mb-2">Mechanical Integrity</p>
+                                            <p className="font-bold text-slate-700 leading-tight">
+                                                {materialType === 'TPC' ? 'Comparable to thermosets with reversible glass transition for infinite recycling.' : 'Irreversible curing leading to permanent waste streams.'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        {/* Section 3: EPR & Reverse Logistics */}
+                        <div className="lg:col-span-4 flex flex-col gap-8">
+                            <section className="scientific-card p-8 h-full border-t-[10px] border-t-amber-500">
+                                <div className="flex items-center mb-8">
+                                    <Icon name="Link" className="w-10 h-10 text-amber-600 mr-4" />
+                                    <h2 className="text-2xl font-extrabold text-slate-800">3. EPR & Logistics</h2>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="bg-amber-900 text-amber-100 p-6 rounded-2xl shadow-xl relative overflow-hidden">
+                                        <div className="relative z-10">
+                                            <h3 className="text-xs font-black uppercase tracking-widest opacity-60 mb-1">Blockchain Asset Tracking</h3>
+                                            <p className="text-2xl data-value mb-4">Inventory Monitoring</p>
+                                            <div className="flex items-center gap-3 bg-white/10 p-3 rounded-lg border border-white/20">
+                                                <Icon name="Box" className="w-6 h-6" />
+                                                <span className="font-bold text-sm">Digital Product Passport v2.1</span>
+                                            </div>
+                                        </div>
+                                        <Icon name="Globe" className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <p className="text-sm font-black text-slate-400 uppercase tracking-widest border-b-2 border-slate-100 pb-2">Material Recovery Statistics</p>
+                                        <div className="flex justify-between items-end">
+                                            <span className="font-bold text-slate-700">EU BESS Pilot Recovery</span>
+                                            <span className="text-2xl data-value text-slate-900">75%</span>
+                                        </div>
+                                        <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                            <div className="bg-amber-500 h-full w-[75%]"></div>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-end mt-4">
+                                            <span className="font-bold text-slate-700">Reverse Logistics Network</span>
+                                            <span className="text-2xl data-value text-slate-900">Pre-Deployed</span>
+                                        </div>
+                                        <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                            <div className="bg-amber-400 h-full w-[60%]"></div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 p-5 bg-slate-900 rounded-xl text-white">
+                                        <p className="text-xs font-black text-amber-400 uppercase mb-2">EPR Strategy</p>
+                                        <p className="text-sm font-bold leading-relaxed opacity-90">
+                                            Financial & logistic responsibility shifted to OEMs to incentivize disassembly-ready design.
+                                        </p>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+
+                    {/* Footer: Integrated Scientific Paradigm */}
+                    <footer className="mt-16 bg-slate-900 text-white rounded-3xl p-10 shadow-2xl overflow-hidden relative">
+                        <div className="relative z-10">
+                            <h2 className="text-3xl font-[900] mb-6 flex items-center">
+                                <span className="bg-white text-slate-900 w-10 h-10 rounded-full flex items-center justify-center mr-4 text-xl">∑</span>
+                                Synthesis: The Climate-Resilient Energy Paradigm
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <p className="text-lg font-bold text-slate-300 leading-relaxed">
+                                    The "Green Paradox" is not a fundamental flaw of renewables, but a systemic design failure. Current architectures over-optimize for a single metric (<span className="text-white underline">LCOE</span>), while treating resilience as secondary.
+                                </p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="border border-white/20 p-4 rounded-xl">
+                                        <p className="text-xs font-black uppercase text-slate-500 mb-1">Shift In Objective</p>
+                                        <p className="font-bold text-amber-400 italic">Physical Durability & Multi-Dimensional Resilience</p>
+                                    </div>
+                                    <div className="border border-white/20 p-4 rounded-xl">
+                                        <p className="text-xs font-black uppercase text-slate-500 mb-1">Final Outcome</p>
+                                        <p className="font-bold text-emerald-400 italic">Carbon-Neutrality through Intrinsic Safety & Circularity</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600 rounded-full blur-[100px] opacity-20 -translate-y-1/2 translate-x-1/2"></div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
